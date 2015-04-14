@@ -154,7 +154,7 @@ class InstanceIndex(base.IndexBase):
         # TODO: DRY
         # Most events are duplicated by instance.update
         return [
-            'compute.instance.update',
+            'compute.instance.update', 'compute.instance.exists',
             'compute.instance.create.end', 'compute.instance.delete.end',
             'compute.instance.power_on.end', 'compute.instance.power_off.end'
         ]

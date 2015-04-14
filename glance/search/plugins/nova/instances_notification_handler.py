@@ -42,7 +42,8 @@ class InstanceHandler(base.NotificationBase):
                 # compute.instance.update seems to be the event set as a
                 # result of a state change etc
                 "compute.instance.update": self.create_or_update,
-                "compute.instance.create.end": self.create,
+                "compute.instance.exists": self.create_or_update,
+                "compute.instance.create.end": self.create_or_update,
                 'compute.instance.power_on.end': self.create_or_update,
                 'compute.instance.power_off.end': self.create_or_update,
                 "compute.instance.delete.end": self.delete,
@@ -52,23 +53,11 @@ class InstanceHandler(base.NotificationBase):
         except Exception as e:
             LOG.error(utils.exception_to_str(e))
 
-    def create(self, payload):
-        instance_id = payload['instance_id']
-        LOG.debug("Creating nova instance information for %s", instance_id)
-
-        payload = self.format_server(payload, is_create=True)
-        self.engine.index(
-            index=self.index_name,
-            doc_type=self.document_type,
-            body=payload,
-            id=instance_id
-        )
-
     def create_or_update(self, payload):
         instance_id = payload['instance_id']
         LOG.debug("Updating nova instance information for %s", instance_id)
 
-        payload = self.format_server(payload, is_update=True)
+        payload = self.format_server(payload)
         body = {
             "doc": payload,
             "doc_as_upsert": True,
@@ -90,7 +79,7 @@ class InstanceHandler(base.NotificationBase):
             id=instance_id
         )
 
-    def format_server(self, payload, is_create=False, is_update=False):
+    def format_server(self, payload):
         # TODO: Maybe the index should be more similar to the notification
         # structure? Notifications have a LOT more information than do
         # what we can get from a single nova call, though missing some stuff,
@@ -128,10 +117,7 @@ class InstanceHandler(base.NotificationBase):
                 name=payload['instance_type'],
             )
         )
-
-        if is_create:
-            formatted.update(dict(
-                fixed_ips=payload['fixed_ips']
-            ))
+        if 'fixed_ips' in payload:
+            formatted['fixed_ips'] =payload ['fixed_ips']
 
         return formatted
