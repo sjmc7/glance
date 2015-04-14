@@ -34,11 +34,17 @@ class InstanceHandler(base.NotificationBase):
                                   'is_public', 'properties']
 
     def process(self, ctxt, publisher_id, event_type, payload, metadata):
+        LOG.debug("Received nova event %s for instance %s",
+                  event_type,
+                  payload.get('instance_id', '<unknown>'))
         try:
             actions = {
                 # compute.instance.update seems to be the event set as a
                 # result of a state change etc
-                "compute.instance.update": self.create,
+                "compute.instance.update": self.create_or_update,
+                "compute.instance.create.end": self.create,
+                'compute.instance.power_on.end': self.create_or_update,
+                'compute.instance.power_off.end': self.create_or_update,
                 "compute.instance.delete.end": self.delete,
             }
             actions[event_type](payload)
@@ -47,10 +53,22 @@ class InstanceHandler(base.NotificationBase):
             LOG.error(utils.exception_to_str(e))
 
     def create(self, payload):
-        id = payload['instance_id']
-        LOG.debug("Updating nova instance information for %s", id)
+        instance_id = payload['instance_id']
+        LOG.debug("Creating nova instance information for %s", instance_id)
 
-        payload = self.format_server(payload)
+        payload = self.format_server(payload, is_create=True)
+        self.engine.index(
+            index=self.index_name,
+            doc_type=self.document_type,
+            body=payload,
+            id=instance_id
+        )
+
+    def create_or_update(self, payload):
+        instance_id = payload['instance_id']
+        LOG.debug("Updating nova instance information for %s", instance_id)
+
+        payload = self.format_server(payload, is_update=True)
         body = {
             "doc": payload,
             "doc_as_upsert": True,
@@ -59,35 +77,43 @@ class InstanceHandler(base.NotificationBase):
             index=self.index_name,
             doc_type=self.document_type,
             body=body,
-            id=id
+            id=instance_id
         )
 
     def delete(self, payload):
-        id = payload['instance_id']
-        LOG.debug("Deleting nova instance information for %s", id)
+        instance_id = payload['instance_id']
+        LOG.debug("Deleting nova instance information for %s", instance_id)
 
         self.engine.delete(
             index=self.index_name,
             doc_type=self.document_type,
-            id=id
+            id=instance_id
         )
 
-    def format_server(self, payload):
+    def format_server(self, payload, is_create=False, is_update=False):
         # TODO: Maybe the index should be more similar to the notification
         # structure? Notifications have a LOT more information than do
         # what we can get from a single nova call, though missing some stuff,
         # notably networking info
-        # https://wiki.openstack.org/wiki/SystemUsageData#compute.instance.update:
-        return dict(
+        #
+        # https://wiki.openstack.org/wiki/SystemUsageData
+
+        # Common attributes
+        formatted = dict(
             id=payload['instance_id'],
             instance_id=payload['instance_id'],
             name=payload['display_name'],
             status=payload['state'],
+            state_description=payload['state_description'],
             owner=payload['tenant_id'],
             updated=datetime.datetime.utcnow(), # TODO: Not this.
             created=payload['created_at'].replace(" ", "T"),
             # networks=server.networks,  # TODO: Figure this out
             availability_zone=payload.get('availability_zone', None),
+            vcpus=payload['vcpus'],
+            disk_gb=payload['disk_gb'],
+            memory_mb=payload['memory_mb'],
+            ephemeral_gb=payload['ephemeral_gb'],
             image=dict(
                 id=payload['image_meta']['base_image_ref'],
                 kernel_id=payload['image_meta']['kernel_id'],
@@ -100,9 +126,12 @@ class InstanceHandler(base.NotificationBase):
             flavor=dict(
                 id=payload['instance_flavor_id'],
                 name=payload['instance_type'],
-            ),
-            state_description=payload['state_description'],
-            vcpus=payload['vcpus'],
-            disk_gb=payload['disk_gb'],
-            memory_mb=payload['memory_mb'],
+            )
         )
+
+        if is_create:
+            formatted.update(dict(
+                fixed_ips=payload['fixed_ips']
+            ))
+
+        return formatted

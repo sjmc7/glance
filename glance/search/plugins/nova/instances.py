@@ -61,6 +61,15 @@ class InstanceIndex(base.IndexBase):
                         'ipv4': {'type': 'ip'}
                     }
                 },
+                'fixed_ips': {
+                    'type': 'nested',
+                    'properties': {
+                        'type': {'type': 'string', 'index': 'not_analyzed'},
+                        'address': {'type': 'ip'},
+                        'version': {'type': 'integer'},
+                        'floating_ips': {'type': 'ip'}
+                    }
+                },
                 'image': {
                     'type': 'nested',
                     'properties': {
@@ -80,6 +89,7 @@ class InstanceIndex(base.IndexBase):
                 'memory_mb': {'type': 'integer'},
                 'vcpus': {'type': 'integer'},
                 'disk_gb': {'type': 'integer'},
+                'ephemeral_gb': {'type': 'integer'},
             },
         }
 
@@ -142,4 +152,9 @@ class InstanceIndex(base.IndexBase):
 
     def get_notification_supported_events(self):
         # TODO: DRY
-        return ['compute.instance.update', 'compute.instance.delete.end']
+        # Most events are duplicated by instance.update
+        return [
+            'compute.instance.update',
+            'compute.instance.create.end', 'compute.instance.delete.end',
+            'compute.instance.power_on.end', 'compute.instance.power_off.end'
+        ]
