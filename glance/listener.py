@@ -58,11 +58,12 @@ class NotificationEndpoint(object):
         topics_exchanges = set()
         for plugin in self.plugins:
             # TODO - make this mandatory
-            if getattr(plugin.plugin, 'get_notification_topic_exchange', None):
-                topic_exchange = plugin.plugin.get_notification_topic_exchange()
+            if getattr(plugin.plugin, 'get_notification_topic_exchanges', None):
+                for topic_exchange in plugin.plugin.get_notification_topic_exchanges():
+                    topics_exchanges.add(topic_exchange)
             else:
-                topic_exchange = ('notifications', 'glance')
-            topics_exchanges.add(topic_exchange)
+                topics_exchanges.add(('notifications', 'glance'))
+
         return topics_exchanges
 
 

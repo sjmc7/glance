@@ -13,12 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from oslo.config import cfg
 from glance import listener
 from glance.openstack.common import service as os_service
 from glance import service
 
+CONF = cfg.CONF
 
 def main():
+    cfg.CONF.register_cli_opts([
+        cfg.Opt('os-username'),
+        cfg.Opt('os-password'),
+        cfg.Opt('os-auth-url'),
+        cfg.Opt('os-tenant-name'),
+        ])
     service.prepare_service()
     launcher = os_service.ProcessLauncher()
     launcher.launch_service(

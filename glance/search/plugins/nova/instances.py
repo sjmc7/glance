@@ -13,22 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from glanceclient import client as gc_client
 from oslo_config import cfg
 from novaclient.v2 import client as nc_client
 
+
 from glance.search.plugins import base
 from . import instances_notification_handler
+from . import serialize_nova_server
 
 CONF = cfg.CONF
-
 
 class InstanceIndex(base.IndexBase):
     def __init__(self):
         super(InstanceIndex, self).__init__()
+        self._nc = None
 
-        self._instance_base_properties = [
-            'id', 'name', 'status', 'power_state', 'owner'
-        ]
+    @property
+    def novaclient(self):
+        if self._nc is None:
+            self._nc = nc_client.Client(cfg.CONF.os_username,
+                              cfg.CONF.os_password,
+                              cfg.CONF.os_tenant_name,
+                              cfg.CONF.os_auth_url)
+        return self._nc
 
     def get_index_name(self):
         return 'nova'
@@ -49,6 +57,10 @@ class InstanceIndex(base.IndexBase):
                     'properties': {
                         'id': {'type': 'string', 'index': 'not_analyzed'},
                         'name': {'type': 'string', 'index': 'not_analyzed'},
+                        'ram': {'type': 'integer'},
+                        'vcpus': {'type': 'integer'},
+                        'disk': {'type': 'integer'},
+                        'ephemeral': {'type': 'integer'},
                         }
                 },
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
@@ -86,10 +98,6 @@ class InstanceIndex(base.IndexBase):
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
                 'status': {'type': 'string', 'index': 'not_analyzed'},
                 'disk_format': {'type': 'string', 'index': 'not_analyzed'},
-                'memory_mb': {'type': 'integer'},
-                'vcpus': {'type': 'integer'},
-                'disk_gb': {'type': 'integer'},
-                'ephemeral_gb': {'type': 'integer'},
             },
         }
 
@@ -112,32 +120,11 @@ class InstanceIndex(base.IndexBase):
         ]
 
     def get_objects(self):
-        with nc_client.Client(CONF.os_username,
-                              CONF.os_password,
-                              CONF.os_tenant_name,
-                              CONF.os_auth_url) as nc:
-            # TODO: paging etc
-            return nc.servers.list()
+        # TODO: paging etc
+        return self.novaclient.servers.list()
 
     def serialize(self, server):
-        return dict(
-            id=server.id,
-            instance_id=server.id,
-            name=server.name,
-            status=server.status.lower(),
-            owner=server.tenant_id,
-            updated=server.updated,
-            created=server.created,
-            networks=server.networks,
-            availability_zone=getattr(server, 'OS-EXT-AZ:availability_zone', None),
-            image=dict(
-                # TODO: get the rest
-                id=server.image['id']
-            ),
-            flavor=dict(
-                id=server.flavor['id']
-            )
-        )
+        return serialize_nova_server(self.novaclient, None, server)
 
     def get_notification_handler(self):
         return instances_notification_handler.InstanceHandler(
@@ -147,8 +134,11 @@ class InstanceIndex(base.IndexBase):
         )
 
     @staticmethod
-    def get_notification_topic_exchange():
-        return 'notifications', 'nova'
+    def get_notification_topic_exchanges():
+        return (
+            ('notifications', 'nova'),
+            ('notifications', 'neutron')
+        )
 
     def get_notification_supported_events(self):
         # TODO: DRY
@@ -156,5 +146,6 @@ class InstanceIndex(base.IndexBase):
         return [
             'compute.instance.update', 'compute.instance.exists',
             'compute.instance.create.end', 'compute.instance.delete.end',
-            'compute.instance.power_on.end', 'compute.instance.power_off.end'
+            'compute.instance.power_on.end', 'compute.instance.power_off.end',
+            'port.delete.end', 'port.create.end',
         ]

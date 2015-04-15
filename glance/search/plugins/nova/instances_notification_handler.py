@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2015 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,16 @@
 # limitations under the License.
 
 import datetime
+from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
 from glance.search.plugins import base
 from glance.common import utils
+from novaclient.v2 import client as nc_client
+import novaclient.exceptions
+
+from . import serialize_nova_server
 
 LOG = logging.getLogger(__name__)
 
@@ -32,6 +37,16 @@ class InstanceHandler(base.NotificationBase):
         super(InstanceHandler, self).__init__(*args, **kwargs)
         self.image_delete_keys = ['deleted_at', 'deleted',
                                   'is_public', 'properties']
+        self._nc = None
+
+    @property
+    def novaclient(self):
+        if self._nc is None:
+            self._nc = nc_client.Client(cfg.CONF.os_username,
+                              cfg.CONF.os_password,
+                              cfg.CONF.os_tenant_name,
+                              cfg.CONF.os_auth_url)
+        return self._nc
 
     def process(self, ctxt, publisher_id, event_type, payload, metadata):
         LOG.debug("Received nova event %s for instance %s",
@@ -41,12 +56,16 @@ class InstanceHandler(base.NotificationBase):
             actions = {
                 # compute.instance.update seems to be the event set as a
                 # result of a state change etc
-                "compute.instance.update": self.create_or_update,
-                "compute.instance.exists": self.create_or_update,
-                "compute.instance.create.end": self.create_or_update,
+                'compute.instance.update': self.create_or_update,
+                'compute.instance.exists': self.create_or_update,
+                'compute.instance.create.end': self.create_or_update,
                 'compute.instance.power_on.end': self.create_or_update,
                 'compute.instance.power_off.end': self.create_or_update,
-                "compute.instance.delete.end": self.delete,
+                'compute.instance.delete.end': self.delete,
+
+                # Neutron events
+                'port.create.end': self.update_neutron_ports,
+                #'port.delete.end': self.update_neutron_ports,
             }
             actions[event_type](payload)
             return oslo_messaging.NotificationResult.HANDLED
@@ -57,10 +76,18 @@ class InstanceHandler(base.NotificationBase):
         instance_id = payload['instance_id']
         LOG.debug("Updating nova instance information for %s", instance_id)
 
-        payload = self.format_server(payload)
+        try:
+            payload = serialize_nova_server(self.novaclient, None, instance_id)
+        except novaclient.exceptions.NotFound, e:
+            # Todo: delete? probably
+            LOG.warning("Instance id %s not found", instance_id)
+            return
+
+        #payload = self.format_server(payload)
+
         body = {
-            "doc": payload,
-            "doc_as_upsert": True,
+            'doc': payload,
+            'doc_as_upsert': True,
         },
         self.engine.update(
             index=self.index_name,
@@ -72,10 +99,40 @@ class InstanceHandler(base.NotificationBase):
     def delete(self, payload):
         instance_id = payload['instance_id']
         LOG.debug("Deleting nova instance information for %s", instance_id)
+        if not instance_id:
+            return
 
         self.engine.delete(
             index=self.index_name,
             doc_type=self.document_type,
+            id=instance_id
+        )
+
+    def update_neutron_ports(self, payload):
+        instance_id = payload['port']['device_id']
+        LOG.debug("Updating neutron port information for instance %s", instance_id)
+        if not instance_id:
+            return
+
+        LOG.warning("%s", payload)
+
+        doc = {
+            'doc': {
+                'id': instance_id,
+                'instance_id': instance_id,
+                'fixed_ips': [
+                    {
+                        'address': fip['ip_address'],
+                        'type': 'fixed',
+                    } for fip in payload['port']['fixed_ips']
+                ]
+            },
+            'doc_as_upsert': True
+        }
+        self.engine.update(
+            index=self.index_name,
+            doc_type=self.document_type,
+            body=doc,
             id=instance_id
         )
 
@@ -96,7 +153,7 @@ class InstanceHandler(base.NotificationBase):
             state_description=payload['state_description'],
             owner=payload['tenant_id'],
             updated=datetime.datetime.utcnow(), # TODO: Not this.
-            created=payload['created_at'].replace(" ", "T"),
+            created=payload['created_at'].replace(' ', 'T'),
             # networks=server.networks,  # TODO: Figure this out
             availability_zone=payload.get('availability_zone', None),
             vcpus=payload['vcpus'],
@@ -118,6 +175,10 @@ class InstanceHandler(base.NotificationBase):
             )
         )
         if 'fixed_ips' in payload:
-            formatted['fixed_ips'] =payload ['fixed_ips']
+            fixed_ips = [
+                {'address': fip['address'],
+                 'type': fip['type']
+                } for fip in payload['fixed_ips']
+            ]
 
         return formatted

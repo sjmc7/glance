@@ -13,3 +13,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+def serialize_nova_server(nc_client, gc_client, server):
+    if isinstance(server, basestring):
+        server = nc_client.servers.get(server)
+
+    glance_image = {
+        'name': 'not in elasticsearch!'
+    }
+
+    flavor = nc_client.flavors.get(server.flavor['id'])
+
+    serialized = dict(
+        id=server.id,
+        instance_id=server.id,
+        name=server.name,
+        status=server.status.lower(),
+        owner=server.tenant_id,
+        updated=server.updated,
+        created=server.created,
+        networks=server.networks,
+        availability_zone=getattr(server, 'OS-EXT-AZ:availability_zone', None),
+        key_name=server.key_name,
+        image=dict(
+            # TODO: get the rest
+            id=server.image['id'],
+            name=glance_image['name'],
+        ),
+        flavor=dict(
+            id=server.flavor['id'],
+            name=flavor.name,
+            ram=flavor.ram,
+            disk=flavor.disk,
+            ephemeral=flavor.ephemeral,
+            vcpus=flavor.vcpus
+        ),
+        fixed_ips=[],
+    )
+    serialized['OS-EXT-STS:power_state'] = getattr(server, 'OS-EXT-STS:power_state')
+    return serialized
