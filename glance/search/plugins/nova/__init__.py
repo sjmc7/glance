@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def serialize_nova_server(nc_client, gc_client, server):
+from glance.search.plugins import indexing_clients
+
+def serialize_nova_server(server):
+    nc_client = indexing_clients.get_novaclient()
     if isinstance(server, basestring):
         server = nc_client.servers.get(server)
 
-    glance_image = {
-        'name': 'not in elasticsearch!'
-    }
+    glance_image = indexing_clients.get_glanceclient().images.get(server.image['id'])
 
     flavor = nc_client.flavors.get(server.flavor['id'])
 

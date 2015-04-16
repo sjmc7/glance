@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2015 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from glanceclient import client as gc_client
 from oslo_config import cfg
-from novaclient.v2 import client as nc_client
 
 from glance.search.plugins import indexing_clients
 from glance.search.plugins import base
@@ -27,20 +25,6 @@ CONF = cfg.CONF
 class InstanceIndex(base.IndexBase):
     def __init__(self):
         super(InstanceIndex, self).__init__()
-        self._ks_client = None
-        self._n_client = None
-
-    @property
-    def keystoneclient(self):
-        if self._ks_client is None:
-            self._ks_client = indexing_clients.get_keystoneclient()
-        return self._ks_client
-
-    @property
-    def novaclient(self):
-        if self._n_client is None:
-            self._n_client = indexing_clients.get_novaclient(self.keystoneclient)
-        return self._n_client
 
     def get_index_name(self):
         return 'nova'
@@ -125,10 +109,10 @@ class InstanceIndex(base.IndexBase):
 
     def get_objects(self):
         # TODO: paging etc
-        return self.novaclient.servers.list()
+        return indexing_clients.get_novaclient().servers.list()
 
     def serialize(self, server):
-        return serialize_nova_server(self.novaclient, None, server)
+        return serialize_nova_server(server)
 
     def get_notification_handler(self):
         return instances_notification_handler.InstanceHandler(

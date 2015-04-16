@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 from keystoneclient.v2_0 import client as ksclient
 from novaclient import client as nclient
+from glanceclient import client as gclient
 from oslo_config import cfg
 import os
 
@@ -60,6 +62,18 @@ CLI_OPTS = [
 cfg.CONF.register_cli_opts(CLI_OPTS, group="service_credentials")
 
 
+def memoized(fn):
+    """A poor-mans memoizer. Doesn't care what arguments are given. Stores
+    the function result in fn.cached.
+    """
+    def wrapper(*args, **kwargs):
+        cached = getattr(fn, 'cached', None)
+        if not cached:
+            setattr(fn, 'cached', fn(*args, **kwargs))
+        return fn.cached
+    return wrapper
+
+@memoized
 def get_keystoneclient():
     return ksclient.Client(
         username=cfg.CONF.service_credentials.os_username,
@@ -71,8 +85,9 @@ def get_keystoneclient():
         region_name=cfg.CONF.service_credentials.os_region_name,
         insecure=cfg.CONF.service_credentials.insecure)
 
-
-def get_novaclient(ks_client):
+@memoized
+def get_novaclient():
+    ks_client = get_keystoneclient()
     endpoint = ks_client.service_catalog.url_for(
         service_type='compute')
 
@@ -80,6 +95,22 @@ def get_novaclient(ks_client):
         version=2,
         endpoint=endpoint,
         auth_token=ks_client.auth_token,
+        auth_url=ks_client.auth_url,
+        tenant_name=ks_client.tenant_name,
+        tenant_id=ks_client.tenant_id,
+        username=ks_client.username
+    )
+
+@memoized
+def get_glanceclient():
+    ks_client = get_keystoneclient()
+    endpoint = ks_client.service_catalog.url_for(
+        service_type='image')
+
+    return gclient.Client(
+        version=2,
+        endpoint=endpoint,
+        token=ks_client.auth_token,
         auth_url=ks_client.auth_url,
         tenant_name=ks_client.tenant_name,
         tenant_id=ks_client.tenant_id,
