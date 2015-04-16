@@ -19,6 +19,7 @@ from oslo_log import log as logging
 import oslo_messaging
 
 from glance.search.plugins import base
+from glance.search.plugins import indexing_clients
 from glance.common import utils
 from novaclient.v2 import client as nc_client
 import novaclient.exceptions
@@ -37,16 +38,20 @@ class InstanceHandler(base.NotificationBase):
         super(InstanceHandler, self).__init__(*args, **kwargs)
         self.image_delete_keys = ['deleted_at', 'deleted',
                                   'is_public', 'properties']
-        self._nc = None
+        self._ks_client = None
+        self._n_client = None
+
+    @property
+    def keystoneclient(self):
+        if self._ks_client is None:
+            self._ks_client = indexing_clients.get_keystoneclient()
+        return self._ks_client
 
     @property
     def novaclient(self):
-        if self._nc is None:
-            self._nc = nc_client.Client(cfg.CONF.os_username,
-                              cfg.CONF.os_password,
-                              cfg.CONF.os_tenant_name,
-                              cfg.CONF.os_auth_url)
-        return self._nc
+        if self._n_client is None:
+            self._n_client = indexing_clients.get_novaclient(self.keystoneclient)
+        return self._n_client
 
     def process(self, ctxt, publisher_id, event_type, payload, metadata):
         LOG.debug("Received nova event %s for instance %s",

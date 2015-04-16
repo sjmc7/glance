@@ -16,6 +16,8 @@
 import abc
 
 from elasticsearch import helpers
+from keystoneclient.v2_0 import client as ksclient
+from oslo.config import cfg
 import six
 
 import glance.search

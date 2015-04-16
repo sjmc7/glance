@@ -21,6 +21,8 @@ import stevedore
 
 from glance.common import config
 from glance import i18n
+# This forces inclusion of the config options for hooking up API clients
+from glance.search.plugins import indexing_clients
 
 
 CONF = cfg.CONF

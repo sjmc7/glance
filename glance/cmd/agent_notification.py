@@ -17,6 +17,7 @@ from oslo.config import cfg
 from glance import listener
 from glance.openstack.common import service as os_service
 from glance import service
+from glance.search.plugins import indexing_clients
 
 CONF = cfg.CONF
 

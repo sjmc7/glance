@@ -17,7 +17,7 @@ from glanceclient import client as gc_client
 from oslo_config import cfg
 from novaclient.v2 import client as nc_client
 
-
+from glance.search.plugins import indexing_clients
 from glance.search.plugins import base
 from . import instances_notification_handler
 from . import serialize_nova_server
@@ -27,16 +27,20 @@ CONF = cfg.CONF
 class InstanceIndex(base.IndexBase):
     def __init__(self):
         super(InstanceIndex, self).__init__()
-        self._nc = None
+        self._ks_client = None
+        self._n_client = None
+
+    @property
+    def keystoneclient(self):
+        if self._ks_client is None:
+            self._ks_client = indexing_clients.get_keystoneclient()
+        return self._ks_client
 
     @property
     def novaclient(self):
-        if self._nc is None:
-            self._nc = nc_client.Client(cfg.CONF.os_username,
-                              cfg.CONF.os_password,
-                              cfg.CONF.os_tenant_name,
-                              cfg.CONF.os_auth_url)
-        return self._nc
+        if self._n_client is None:
+            self._n_client = indexing_clients.get_novaclient(self.keystoneclient)
+        return self._n_client
 
     def get_index_name(self):
         return 'nova'

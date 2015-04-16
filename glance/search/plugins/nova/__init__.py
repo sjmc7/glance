@@ -50,4 +50,5 @@ def serialize_nova_server(nc_client, gc_client, server):
         fixed_ips=[],
     )
     serialized['OS-EXT-STS:power_state'] = getattr(server, 'OS-EXT-STS:power_state')
+    serialized['OS-EXT-STS:task_state'] = getattr(server, 'OS-EXT-STS:task_state')
     return serialized
