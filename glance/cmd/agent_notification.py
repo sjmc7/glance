@@ -22,12 +22,8 @@ from glance.search.plugins import indexing_clients
 CONF = cfg.CONF
 
 def main():
-    cfg.CONF.register_cli_opts([
-        cfg.Opt('os-username'),
-        cfg.Opt('os-password'),
-        cfg.Opt('os-auth-url'),
-        cfg.Opt('os-tenant-name'),
-        ])
+    indexing_clients.register_cli_opts()
+
     service.prepare_service()
     launcher = os_service.ProcessLauncher()
     launcher.launch_service(

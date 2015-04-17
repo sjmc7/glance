@@ -31,20 +31,18 @@ _LE = i18n._LE
 
 
 def main():
-    CONF.register_cli_opts([
-        cfg.Opt('os-username'),
-        cfg.Opt('os-password'),
-        cfg.Opt('os-auth-url'),
-        cfg.Opt('os-tenant-name'),
-        ])
     try:
         logging.register_options(CONF)
+        indexing_clients.register_cli_opts()
+
         cfg_files = cfg.find_config_files(project='glance',
                                           prog='glance-api')
         cfg_files.extend(cfg.find_config_files(project='glance',
                                                prog='glance-search'))
         config.parse_args(default_config_files=cfg_files)
         logging.setup(CONF, 'glance')
+
+
 
         namespace = 'glance.search.index_backend'
         ext_manager = stevedore.extension.ExtensionManager(
