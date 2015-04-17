@@ -34,8 +34,6 @@ class InstanceHandler(base.NotificationBase):
     """
     def __init__(self, *args, **kwargs):
         super(InstanceHandler, self).__init__(*args, **kwargs)
-        self.image_delete_keys = ['deleted_at', 'deleted',
-                                  'is_public', 'properties']
 
     def process(self, ctxt, publisher_id, event_type, payload, metadata):
         LOG.debug("Received nova event %s for instance %s",
