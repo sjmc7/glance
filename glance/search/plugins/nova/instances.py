@@ -42,6 +42,8 @@ class InstanceIndex(base.IndexBase):
                 # TODO - make flavor flat?
                 'flavor_id': {'type': 'string', 'index': 'not_analyzed'},
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
+                'tenant_id': {'type': 'string', 'index': 'not_analyzed'},
+                'user_id': {'type': 'string', 'index': 'not_analyzed'},
                 'created_at': {'type': 'date'},
                 'updated_at': {'type': 'date'},
                 'networks': {
@@ -65,7 +67,7 @@ class InstanceIndex(base.IndexBase):
                 "and": [
                     {
                         'term': {
-                            'owner': request_context.owner
+                            'tenant_id': request_context.owner
                         }
                     },
                     {

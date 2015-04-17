@@ -27,6 +27,8 @@ def serialize_nova_server(server):
         name=server.name,
         status=server.status.lower(),
         owner=server.tenant_id,
+        tenant_id=server.tenant_id,
+        user_id=server.user_id,
         updated=server.updated,
         created=server.created,
         networks=server.networks,
