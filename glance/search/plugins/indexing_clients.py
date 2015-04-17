@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import functools
+from cinderclient.v2 import client as cclient
 from keystoneclient.v2_0 import client as ksclient
 from novaclient import client as nclient
 from glanceclient import client as gclient
@@ -116,3 +117,18 @@ def get_glanceclient():
         tenant_id=ks_client.tenant_id,
         username=ks_client.username
     )
+
+@memoized
+def get_cinderclient():
+    ks_client = get_keystoneclient()
+    endpoint = ks_client.service_catalog.url_for(
+        service_type='volumev2')
+
+    _cinder = cclient.Client(
+        ks_client.username,
+        ks_client.password,
+        ks_client.tenant_name,
+        auth_url=ks_client.auth_url,
+    )
+    _cinder.client.auth_token = ks_client.auth_token
+    return _cinder
