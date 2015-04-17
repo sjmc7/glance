@@ -15,14 +15,11 @@
 
 from glance.search.plugins import indexing_clients
 
+
 def serialize_nova_server(server):
     nc_client = indexing_clients.get_novaclient()
     if isinstance(server, basestring):
         server = nc_client.servers.get(server)
-
-    glance_image = indexing_clients.get_glanceclient().images.get(server.image['id'])
-
-    flavor = nc_client.flavors.get(server.flavor['id'])
 
     serialized = dict(
         id=server.id,
@@ -35,20 +32,8 @@ def serialize_nova_server(server):
         networks=server.networks,
         availability_zone=getattr(server, 'OS-EXT-AZ:availability_zone', None),
         key_name=server.key_name,
-        image=dict(
-            # TODO: get the rest
-            id=server.image['id'],
-            name=glance_image['name'],
-        ),
-        flavor=dict(
-            id=server.flavor['id'],
-            name=flavor.name,
-            ram=flavor.ram,
-            disk=flavor.disk,
-            ephemeral=flavor.ephemeral,
-            vcpus=flavor.vcpus
-        ),
-        fixed_ips=[],
+        image_id=server.image['id'],
+        flavor_id=server.flavor['id'],
     )
     serialized['OS-EXT-STS:power_state'] = getattr(server, 'OS-EXT-STS:power_state')
     serialized['OS-EXT-STS:task_state'] = getattr(server, 'OS-EXT-STS:task_state')

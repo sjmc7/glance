@@ -40,17 +40,7 @@ class InstanceIndex(base.IndexBase):
                 'instance_id': {'type': 'string', 'index': 'not_analyzed'},
                 'name': {'type': 'string'},
                 # TODO - make flavor flat?
-                'flavor': {
-                    'type': 'nested',
-                    'properties': {
-                        'id': {'type': 'string', 'index': 'not_analyzed'},
-                        'name': {'type': 'string', 'index': 'not_analyzed'},
-                        'ram': {'type': 'integer'},
-                        'vcpus': {'type': 'integer'},
-                        'disk': {'type': 'integer'},
-                        'ephemeral': {'type': 'integer'},
-                        }
-                },
+                'flavor_id': {'type': 'string', 'index': 'not_analyzed'},
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
                 'created_at': {'type': 'date'},
                 'updated_at': {'type': 'date'},
@@ -61,27 +51,7 @@ class InstanceIndex(base.IndexBase):
                         'ipv4': {'type': 'ip'}
                     }
                 },
-                'fixed_ips': {
-                    'type': 'nested',
-                    'properties': {
-                        'type': {'type': 'string', 'index': 'not_analyzed'},
-                        'address': {'type': 'ip'},
-                        'version': {'type': 'integer'},
-                        'floating_ips': {'type': 'ip'}
-                    }
-                },
-                'image': {
-                    'type': 'nested',
-                    'properties': {
-                        'id': {'type': 'string', 'index': 'not_analyzed'},
-                        'container_format': {'type': 'string', 'index': 'not_analyzed'},
-                        'min_ram': {'type': 'integer'},
-                        'disk_format': {'type': 'string', 'index': 'not_analyzed'},
-                        'min_disk': {'type': 'integer'},
-                        'kernel_id': {'type': 'string', 'index': 'not_analyzed'},
-                        'image_id': {'type': 'string', 'index': 'not_analyzed'} # base_image_ref
-                    }
-                },
+                'image_id': {'type': 'string', 'index': 'not_analyzed'},
                 'state_description': {'type': 'string'},
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
                 'status': {'type': 'string', 'index': 'not_analyzed'},
@@ -109,7 +79,7 @@ class InstanceIndex(base.IndexBase):
 
     def get_objects(self):
         # TODO: paging etc
-        return indexing_clients.get_novaclient().servers.list()
+        return indexing_clients.get_novaclient().servers.list(limit=1000)
 
     def serialize(self, server):
         return serialize_nova_server(server)

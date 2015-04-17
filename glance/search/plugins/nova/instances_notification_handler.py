@@ -51,7 +51,7 @@ class InstanceHandler(base.NotificationBase):
                 'compute.instance.delete.end': self.delete,
 
                 # Neutron events
-                'port.create.end': self.update_neutron_ports,
+                'port.create.end': self.update_from_neutron,
                 #'port.delete.end': self.update_neutron_ports,
             }
             actions[event_type](payload)
@@ -62,15 +62,23 @@ class InstanceHandler(base.NotificationBase):
     def create_or_update(self, payload):
         instance_id = payload['instance_id']
         LOG.debug("Updating nova instance information for %s", instance_id)
+        self._update_instance(instance_id)
 
+    def update_from_neutron(self, payload):
+        instance_id = payload['port']['device_id']
+        LOG.debug("Updating instance from neutron notification for instance %s",
+                  instance_id)
+        if not instance_id:
+            return
+        self._update_instance(instance_id)
+
+    def _update_instance(self, instance_id):
         try:
             payload = serialize_nova_server(instance_id)
         except novaclient.exceptions.NotFound, e:
             # Todo: delete? probably
             LOG.warning("Instance id %s not found", instance_id)
             return
-
-        #payload = self.format_server(payload)
 
         body = {
             'doc': payload,
@@ -95,30 +103,3 @@ class InstanceHandler(base.NotificationBase):
             id=instance_id
         )
 
-    def update_neutron_ports(self, payload):
-        instance_id = payload['port']['device_id']
-        LOG.debug("Updating neutron port information for instance %s", instance_id)
-        if not instance_id:
-            return
-
-        LOG.warning("%s", payload)
-
-        doc = {
-            'doc': {
-                'id': instance_id,
-                'instance_id': instance_id,
-                'fixed_ips': [
-                    {
-                        'address': fip['ip_address'],
-                        'type': 'fixed',
-                    } for fip in payload['port']['fixed_ips']
-                ]
-            },
-            'doc_as_upsert': True
-        }
-        self.engine.update(
-            index=self.index_name,
-            doc_type=self.document_type,
-            body=doc,
-            id=instance_id
-        )
