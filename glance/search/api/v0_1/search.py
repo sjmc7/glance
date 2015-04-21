@@ -47,7 +47,7 @@ class SearchController(object):
         self.plugins = plugins or []
 
     def search(self, req, query, index, doc_type=None, fields=None, offset=0,
-               limit=10, sort_by=None):
+               limit=10, sort=None):
         if fields is None:
             fields = []
 
@@ -59,7 +59,7 @@ class SearchController(object):
                                         fields,
                                         offset,
                                         limit,
-                                        sort_by,
+                                        sort,
                                         True)
 
             for plugin in self.plugins:
@@ -283,12 +283,14 @@ class RequestDeserializer(wsgi.JSONRequestDeserializer):
     def search(self, request):
         body = self._get_request_body(request)
         self._check_allowed(body)
+        print body
         query = body.pop('query', None)
         indices = body.pop('index', None)
         doc_types = body.pop('type', None)
         fields = body.pop('fields', None)
         offset = body.pop('offset', None)
         limit = body.pop('limit', None)
+        sort = body.pop('sort', None)
         highlight = body.pop('highlight', None)
 
         if not indices:
@@ -318,6 +320,9 @@ class RequestDeserializer(wsgi.JSONRequestDeserializer):
 
         if highlight is not None:
             query_params['query']['highlight'] = highlight
+
+        if sort is not None:
+            query_params['sort'] = sort
 
         return query_params
 

@@ -27,14 +27,8 @@ search_opts = [
                      'address and port number.')
 ]
 
-other_opts = [
-    cfg.BoolOpt('debug', default=False, help="Print debugging output."),
-    cfg.BoolOpt('verbose', default=False, help="Print more verbose output.")
-]
-
 CONF = cfg.CONF
 CONF.register_opts(search_opts, group='elasticsearch')
-CONF.register_opts(other_opts)
 
 
 def get_api():
@@ -51,8 +45,12 @@ class CatalogSearchRepo(object):
         self.plugins = utils.get_search_plugins() or []
         self.plugins_info_dict = self._get_plugin_info()
 
-    def search(self, index, doc_type, query, fields, offset, limit, sort_by,
+    def search(self, index, doc_type, query, fields, offset, limit, sort,
                ignore_unavailable=True):
+        print "SORT BY", sort
+        kwargs = {}
+        if sort is not None:
+            kwargs['sort'] = sort
         return self.es_api.search(
             index=index,
             doc_type=doc_type,
@@ -60,8 +58,8 @@ class CatalogSearchRepo(object):
             _source_include=fields,
             from_=offset,
             size=limit,
-            sort=sort_by,
-            ignore_unavailable=ignore_unavailable)
+            ignore_unavailable=ignore_unavailable,
+            **kwargs)
 
     def index(self, default_index, default_type, actions):
         return helpers.bulk(

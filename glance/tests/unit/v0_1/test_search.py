@@ -70,12 +70,12 @@ class TestSearchController(base.IsolatedUnitTest):
         fields = None
         offset = 0
         limit = 10
-        sort_by = "_score:desc"
+        sort = "_score:desc"
 
         self.search_controller.search(
-            request, query, index, doc_type, fields, offset, limit, sort_by)
+            request, query, index, doc_type, fields, offset, limit, sort)
         self.search_controller.search.assert_called_once_with(
-            request, query, index, doc_type, fields, offset, limit, sort_by)
+            request, query, index, doc_type, fields, offset, limit, sort)
 
     def test_search_all_repo(self):
         request = unit_test_utils.get_fake_request()
@@ -87,11 +87,11 @@ class TestSearchController(base.IsolatedUnitTest):
         fields = []
         offset = 0
         limit = 10
-        sort_by = "_score:desc"
+        sort = "_score:desc"
         self.search_controller.search(
-            request, query, index, doc_type, fields, offset, limit, sort_by)
+            request, query, index, doc_type, fields, offset, limit, sort)
         repo.search.assert_called_once_with(
-            index, doc_type, query, fields, offset, limit, sort_by, True)
+            index, doc_type, query, fields, offset, limit, sort, True)
 
     def test_search_forbidden(self):
         request = unit_test_utils.get_fake_request()
