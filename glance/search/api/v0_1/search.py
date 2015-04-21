@@ -47,7 +47,7 @@ class SearchController(object):
         self.plugins = plugins or []
 
     def search(self, req, query, index, doc_type=None, fields=None, offset=0,
-               limit=10):
+               limit=10, sort_by=None):
         if fields is None:
             fields = []
 
@@ -59,6 +59,7 @@ class SearchController(object):
                                         fields,
                                         offset,
                                         limit,
+                                        sort_by,
                                         True)
 
             for plugin in self.plugins:
