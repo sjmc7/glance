@@ -31,6 +31,12 @@ _LE = i18n._LE
 
 
 def main():
+    CONF.register_cli_opts([
+        cfg.Opt('os-username'),
+        cfg.Opt('os-password'),
+        cfg.Opt('os-auth-url'),
+        cfg.Opt('os-tenant-name'),
+        ])
     try:
         logging.register_options(CONF)
         indexing_clients.register_cli_opts()

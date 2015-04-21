@@ -24,7 +24,7 @@ search_opts = [
     cfg.ListOpt('hosts', default=['127.0.0.1:9200'],
                 help='List of nodes where Elasticsearch instances are '
                      'running. A single node should be defined as an IP '
-                     'address and port number.'),
+                     'address and port number.')
 ]
 
 CONF = cfg.CONF
@@ -45,8 +45,12 @@ class CatalogSearchRepo(object):
         self.plugins = utils.get_search_plugins() or []
         self.plugins_info_dict = self._get_plugin_info()
 
-    def search(self, index, doc_type, query, fields, offset, limit,
+    def search(self, index, doc_type, query, fields, offset, limit, sort,
                ignore_unavailable=True):
+        print "SORT BY", sort
+        kwargs = {}
+        if sort is not None:
+            kwargs['sort'] = sort
         return self.es_api.search(
             index=index,
             doc_type=doc_type,
@@ -54,7 +58,8 @@ class CatalogSearchRepo(object):
             _source_include=fields,
             from_=offset,
             size=limit,
-            ignore_unavailable=ignore_unavailable)
+            ignore_unavailable=ignore_unavailable,
+            **kwargs)
 
     def index(self, default_index, default_type, actions):
         return helpers.bulk(
