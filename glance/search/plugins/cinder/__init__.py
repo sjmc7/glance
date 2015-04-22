@@ -16,6 +16,7 @@
 from glance.search.plugins import indexing_clients
 
 
+@indexing_clients.clear_cache_on_unauthorized
 def serialize_volume(volume):
     if isinstance(volume, basestring):
         volume = indexing_clients.get_cinderclient().volumes.get(volume)

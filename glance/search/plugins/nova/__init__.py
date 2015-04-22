@@ -16,6 +16,7 @@
 from glance.search.plugins import indexing_clients
 
 
+@indexing_clients.clear_cache_on_unauthorized
 def serialize_nova_server(server):
     nc_client = indexing_clients.get_novaclient()
     if isinstance(server, basestring):

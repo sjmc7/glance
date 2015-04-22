@@ -15,9 +15,12 @@
 
 import functools
 from cinderclient.v2 import client as cclient
+import cinderclient.exceptions
 from keystoneclient.v2_0 import client as ksclient
 from novaclient import client as nclient
+import novaclient.exceptions
 from glanceclient import client as gclient
+import glanceclient.exc
 from oslo_config import cfg
 import os
 
@@ -65,15 +68,32 @@ def register_cli_opts():
     cfg.CONF.register_cli_opts(CLI_OPTS, group="service_credentials")
 
 
+client_cache = {}
+
 def memoized(fn):
     """A poor-mans memoizer. Doesn't care what arguments are given. Stores
     the function result in fn.cached.
     """
     def wrapper(*args, **kwargs):
-        cached = getattr(fn, 'cached', None)
+        cached = client_cache.get(fn.__name__)
         if not cached:
-            setattr(fn, 'cached', fn(*args, **kwargs))
-        return fn.cached
+            client_cache[fn.__name__] = fn(*args, **kwargs)
+        return client_cache[fn.__name__]
+    return wrapper
+
+EXCEPTION_LIST = (
+    novaclient.exceptions.Unauthorized,
+    cinderclient.exceptions.Unauthorized,
+    glanceclient.exc.Unauthorized
+)
+
+def clear_cache_on_unauthorized(fn):
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except EXCEPTION_LIST, e:
+            client_cache.clear()
+            return fn(*args, **kwargs)
     return wrapper
 
 @memoized
