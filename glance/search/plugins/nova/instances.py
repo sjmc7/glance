@@ -39,8 +39,16 @@ class InstanceIndex(base.IndexBase):
                 'id': {'type': 'string', 'index': 'not_analyzed'},
                 'instance_id': {'type': 'string', 'index': 'not_analyzed'},
                 'name': {'type': 'string'},
+                'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'},
                 # TODO - make flavor flat?
-                'flavor_id': {'type': 'string', 'index': 'not_analyzed'},
+                'flavor': {
+                    'type': 'nested',
+                    'properties': {
+                        'id': {'type': 'string', 'index': 'not_analyzed'},
+                        'name': {'type': 'string'},
+                        'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'}
+                    }
+                },
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
                 'tenant_id': {'type': 'string', 'index': 'not_analyzed'},
                 'user_id': {'type': 'string', 'index': 'not_analyzed'},
@@ -53,7 +61,14 @@ class InstanceIndex(base.IndexBase):
                         'ipv4': {'type': 'ip'}
                     }
                 },
-                'image_id': {'type': 'string', 'index': 'not_analyzed'},
+                'image': {
+                    'type': 'nested',
+                    'properties': {
+                        'id': {'type': 'string', 'index': 'not_analyzed'},
+                        'name': {'type': 'string'},
+                        'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'}
+                    }
+                },
                 'state_description': {'type': 'string'},
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
                 'status': {'type': 'string', 'index': 'not_analyzed'},

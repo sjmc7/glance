@@ -16,28 +16,46 @@
 from glance.search.plugins import indexing_clients
 
 
+INDEX_FLAVORS = True
+
 @indexing_clients.clear_cache_on_unauthorized
 def serialize_nova_server(server):
     nc_client = indexing_clients.get_novaclient()
     if isinstance(server, basestring):
         server = nc_client.servers.get(server)
 
+    if INDEX_FLAVORS:
+        flavor = nc_client.flavors.get(server.flavor['id'])
+
     serialized = dict(
         id=server.id,
         instance_id=server.id,
         name=server.name,
+        name_not_analyzed=server.name,
         status=server.status.lower(),
         owner=server.tenant_id,
         tenant_id=server.tenant_id,
         user_id=server.user_id,
         updated=server.updated,
         created=server.created,
+        metadata=server.metadata,
         networks=server.networks,
         availability_zone=getattr(server, 'OS-EXT-AZ:availability_zone', None),
         key_name=server.key_name,
-        image_id=server.image['id'],
-        flavor_id=server.flavor['id'],
+        image={'id': server.image['id']},
+        flavor={
+            'id': server.flavor['id']
+        }
     )
+    # TODO: turn these into useful strings?
     serialized['OS-EXT-STS:power_state'] = getattr(server, 'OS-EXT-STS:power_state')
     serialized['OS-EXT-STS:task_state'] = getattr(server, 'OS-EXT-STS:task_state')
+
+    if INDEX_FLAVORS:
+        serialized['flavor']['name'] = flavor.name
+        serialized['flavor']['name_not_analyzed'] = flavor.name
+        serialized['flavor']['ram'] = flavor.ram
+        serialized['flavor']['ephemeral'] = flavor.ephemeral
+        serialized['flavor']['vcpus'] = flavor.vcpus
+        serialized['flavor']['disk'] = flavor.disk
     return serialized
