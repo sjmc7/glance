@@ -76,7 +76,7 @@ class InstanceIndex(base.IndexBase):
 
     def get_facets(self):
         facets_disallowed = ('name_not_analyzed', 'image.name_not_analyzed',)
-        facets_with_options = ('status', 'availability_zone', 'flavor.name')
+        facets_with_options = ('status', 'availability_zone', ('flavor.name', 'flavor.name_not_analyzed'))
 
         facets = super(InstanceIndex, self).get_facets()
 

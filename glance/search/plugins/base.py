@@ -143,9 +143,25 @@ class IndexBase(object):
     def get_facet_terms(self, fields):
         term_aggregations = {}
         for facet in fields:
-            term_aggregations[facet] = {
-                'terms': {'field': facet}
-            }
+            if isinstance(facet, tuple):
+                facet_name, actual_field = facet
+            else:
+                facet_name, actual_field = facet, facet
+            if '.' in facet_name:
+                # Needs a nested aggregate
+                term_aggregations[facet_name] = {
+                    "nested": {"path": facet_name.split('.')[0]},
+                    "aggs": {
+                        # TODO: Handle deeper nesting?
+                        facet_name: {
+                            'terms': {'field': actual_field}
+                        }
+                    }
+                }
+            else:
+                term_aggregations[facet_name] = {
+                    'terms': {'field': actual_field}
+                }
         if term_aggregations:
             # TODO: Apply rbac
             query = {
@@ -161,7 +177,11 @@ class IndexBase(object):
 
             facet_terms = {}
             for term, aggregation in six.iteritems(results['aggregations']):
-                facet_terms[term] = aggregation['buckets']
+                if term in aggregation:
+                    # Nested - TODO handle arbitrary nesting?
+                    facet_terms[term] = aggregation[term]['buckets']
+                else:
+                    facet_terms[term] = aggregation['buckets']
             return facet_terms
         return {}
 
