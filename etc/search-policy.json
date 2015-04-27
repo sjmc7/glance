@@ -4,5 +4,6 @@
 
     "catalog_index": "role:admin",
     "catalog_search": "",
-    "catalog_plugins": ""
+    "catalog_plugins": "",
+    "catalog_facets": ""
 }

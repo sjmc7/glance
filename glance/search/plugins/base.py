@@ -120,6 +120,26 @@ class IndexBase(object):
         """Get an index mapping."""
         return {}
 
+    def get_facets(self):
+        """Get facets available for searching, in the form of a list of
+        dicts with keys "name", "type" and optionally "options" if a field
+        should have discreet allowed values
+        """
+        facets = []
+        def get_facets_for(mapping, prefix=''):
+            facets = []
+            for name, properties in six.iteritems(mapping):
+                if properties.get('type') == 'nested':
+                    facets.extend(get_facets_for(properties['properties'], "%s%s." % (prefix, name)))
+                else:
+                    facets.append({
+                        'name': prefix + name,
+                        'type': properties['type']
+                    })
+            return facets
+
+        return get_facets_for(self.get_mapping()['properties'])
+
     def get_notification_handler(self):
         """Get the notification handler which implements NotificationBase."""
         return None

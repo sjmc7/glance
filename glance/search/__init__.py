@@ -80,3 +80,13 @@ class CatalogSearchRepo(object):
             info['index'] = plugin.obj.get_index_name()
             plugin_info['plugins'].append(info)
         return plugin_info
+
+    def facets(self, for_index=None, for_doc_type=None):
+        facets = {}
+        for plugin in self.plugins:
+            index_name = plugin.obj.get_index_name()
+            doc_type = plugin.obj.get_document_type()
+            if ((not for_index or index_name == for_index) and
+                    (not for_index or doc_type == for_doc_type)):
+                facets.setdefault(index_name, {})[doc_type] = plugin.obj.get_facets()
+        return facets

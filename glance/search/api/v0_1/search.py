@@ -112,6 +112,19 @@ class SearchController(object):
             LOG.error(utils.exception_to_str(e))
             raise webob.exc.HTTPInternalServerError()
 
+    def facets(self, req, index_name=None, doc_type=None):
+        try:
+            search_repo = self.gateway.get_catalog_search_repo(req.context)
+            result = search_repo.facets(index_name, doc_type)
+            return result
+        except exception.Forbidden as e:
+            raise webob.exc.HTTPForbidden(explanation=e.msg)
+        except exception.NotFound as e:
+            raise webob.exc.HTTPNotFound(explanation=e.msg)
+        except Exception as e:
+            LOG.error(utils.exception_to_str(e))
+            raise webob.exc.HTTPInternalServerError()
+
 
 class RequestDeserializer(wsgi.JSONRequestDeserializer):
     _disallowed_properties = ['self', 'schema']
@@ -283,7 +296,6 @@ class RequestDeserializer(wsgi.JSONRequestDeserializer):
     def search(self, request):
         body = self._get_request_body(request)
         self._check_allowed(body)
-        print body
         query = body.pop('query', None)
         indices = body.pop('index', None)
         doc_types = body.pop('type', None)
@@ -358,6 +370,12 @@ class RequestDeserializer(wsgi.JSONRequestDeserializer):
         }
         return query_params
 
+    def facets(self, request):
+        return {
+            'index_name': request.GET.get('index', None),
+            'doc_type': request.GET.get('type', None)
+        }
+
 
 class ResponseSerializer(wsgi.JSONResponseSerializer):
     def __init__(self, schema=None):
@@ -375,6 +393,11 @@ class ResponseSerializer(wsgi.JSONResponseSerializer):
         response.content_type = 'application/json'
 
     def index(self, response, query_result):
+        body = json.dumps(query_result, ensure_ascii=False)
+        response.unicode_body = six.text_type(body)
+        response.content_type = 'application/json'
+
+    def facets(self, response, query_result):
         body = json.dumps(query_result, ensure_ascii=False)
         response.unicode_body = six.text_type(body)
         response.content_type = 'application/json'

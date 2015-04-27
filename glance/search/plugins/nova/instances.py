@@ -76,6 +76,7 @@ class InstanceIndex(base.IndexBase):
             },
         }
 
+
     def get_rbac_filter(self, request_context):
         return [
             {
