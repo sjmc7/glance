@@ -121,7 +121,10 @@ def get_novaclient():
         auth_url=ks_client.auth_url,
         tenant_name=ks_client.tenant_name,
         tenant_id=ks_client.tenant_id,
-        username=ks_client.username
+        username=ks_client.username,
+        cacert=cfg.CONF.service_credentials.os_cacert,
+        region_name=cfg.CONF.service_credentials.os_region_name,
+        insecure=cfg.CONF.service_credentials.insecure
     )
 
 @memoized
@@ -137,7 +140,10 @@ def get_glanceclient():
         auth_url=ks_client.auth_url,
         tenant_name=ks_client.tenant_name,
         tenant_id=ks_client.tenant_id,
-        username=ks_client.username
+        username=ks_client.username,
+        cacert=cfg.CONF.service_credentials.os_cacert,
+        region_name=cfg.CONF.service_credentials.os_region_name,
+        insecure=cfg.CONF.service_credentials.insecure
     )
 
 @memoized
@@ -151,6 +157,9 @@ def get_cinderclient():
         ks_client.password,
         ks_client.tenant_name,
         auth_url=ks_client.auth_url,
+        cacert=cfg.CONF.service_credentials.os_cacert,
+        region_name=cfg.CONF.service_credentials.os_region_name,
+        insecure=cfg.CONF.service_credentials.insecure
     )
     _cinder.client.auth_token = ks_client.auth_token
     return _cinder
