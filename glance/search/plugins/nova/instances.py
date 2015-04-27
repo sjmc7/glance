@@ -96,7 +96,10 @@ class InstanceIndex(base.IndexBase):
 
     def get_objects(self):
         # TODO: paging etc
-        return indexing_clients.get_novaclient().servers.list(limit=1000)
+        return indexing_clients.get_novaclient().servers.list(
+            limit=1000, 
+            search_opts={'all_tenants': True}
+        )
 
     def serialize(self, server):
         return serialize_nova_server(server)
