@@ -47,7 +47,6 @@ class CatalogSearchRepo(object):
 
     def search(self, index, doc_type, query, fields, offset, limit, sort,
                ignore_unavailable=True):
-        print "SORT BY", sort
         kwargs = {}
         if sort is not None:
             kwargs['sort'] = sort
