@@ -140,6 +140,31 @@ class IndexBase(object):
 
         return get_facets_for(self.get_mapping()['properties'])
 
+    def get_facet_terms(self, fields):
+        term_aggregations = {}
+        for facet in fields:
+            term_aggregations[facet] = {
+                'terms': {'field': facet}
+            }
+        if term_aggregations:
+            # TODO: Apply rbac
+            query = {
+                'aggs': term_aggregations,
+            }
+            results = self.engine.search(
+                index=self.get_index_name(),
+                doc_type=self.get_document_type(),
+                body=query,
+                size=20,
+                ignore_unavailable=True,
+                search_type='count')
+
+            facet_terms = {}
+            for term, aggregation in six.iteritems(results['aggregations']):
+                facet_terms[term] = aggregation['buckets']
+            return facet_terms
+        return {}
+
     def get_notification_handler(self):
         """Get the notification handler which implements NotificationBase."""
         return None

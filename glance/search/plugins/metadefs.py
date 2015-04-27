@@ -84,6 +84,9 @@ class MetadefIndex(base.IndexBase):
         }
         return mapping
 
+    def get_facets(self):
+        raise NotImplementedError("Needs protected property filtering")
+
     def get_rbac_filter(self, request_context):
         # TODO(krykowski): Define base get_rbac_filter in IndexBase class
         # which will provide some common subset of query pieces.

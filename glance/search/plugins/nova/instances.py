@@ -69,13 +69,27 @@ class InstanceIndex(base.IndexBase):
                         'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'}
                     }
                 },
-                'state_description': {'type': 'string'},
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
                 'status': {'type': 'string', 'index': 'not_analyzed'},
-                'disk_format': {'type': 'string', 'index': 'not_analyzed'},
             },
         }
 
+    def get_facets(self):
+        facets_disallowed = ('name_not_analyzed', 'image.name_not_analyzed',)
+        facets_with_options = ('status', 'availability_zone', 'flavor.name')
+
+        facets = super(InstanceIndex, self).get_facets()
+
+        # Filter out undesirables
+        facets = filter(lambda f: f['name'] not in facets_disallowed, facets)
+
+        facet_terms = self.get_facet_terms(facets_with_options)
+
+        for facet in facets:
+            if facet['name'] in facet_terms:
+                facet['options'] = facet_terms[facet['name']]
+
+        return facets
 
     def get_rbac_filter(self, request_context):
         return [

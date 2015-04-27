@@ -69,6 +69,9 @@ class ImageIndex(base.IndexBase):
             },
         }
 
+    def get_facets(self):
+        raise NotImplementedError("Needs protected property filtering")
+
     def get_rbac_filter(self, request_context):
         return [
             {
