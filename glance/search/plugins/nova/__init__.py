@@ -17,6 +17,8 @@ from glance.search.plugins import indexing_clients
 
 
 INDEX_FLAVORS = True
+INDEX_IMAGES = True
+
 
 @indexing_clients.clear_cache_on_unauthorized
 def serialize_nova_server(server):
@@ -26,12 +28,14 @@ def serialize_nova_server(server):
 
     if INDEX_FLAVORS:
         flavor = nc_client.flavors.get(server.flavor['id'])
+    if INDEX_IMAGES:
+        image = indexing_clients.get_glanceclient().images.get(server.image['id'])
 
     serialized = dict(
         id=server.id,
         instance_id=server.id,
         name=server.name,
-        name_not_analyzed=server.name,
+        name_exact=server.name,
         status=server.status.lower(),
         owner=server.tenant_id,
         tenant_id=server.tenant_id,
@@ -53,9 +57,15 @@ def serialize_nova_server(server):
 
     if INDEX_FLAVORS:
         serialized['flavor']['name'] = flavor.name
-        serialized['flavor']['name_not_analyzed'] = flavor.name
+        serialized['flavor']['name_exact'] = flavor.name
         serialized['flavor']['ram'] = flavor.ram
         serialized['flavor']['ephemeral'] = flavor.ephemeral
         serialized['flavor']['vcpus'] = flavor.vcpus
         serialized['flavor']['disk'] = flavor.disk
+
+    if INDEX_IMAGES:
+        serialized['image']['name'] = image.name
+        serialized['image']['name_exact'] = image.name
+
+
     return serialized

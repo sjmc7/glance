@@ -39,14 +39,14 @@ class InstanceIndex(base.IndexBase):
                 'id': {'type': 'string', 'index': 'not_analyzed'},
                 'instance_id': {'type': 'string', 'index': 'not_analyzed'},
                 'name': {'type': 'string'},
-                'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'},
+                'name_exact': {'type': 'string', 'index': 'not_analyzed'},
                 # TODO - make flavor flat?
                 'flavor': {
                     'type': 'nested',
                     'properties': {
                         'id': {'type': 'string', 'index': 'not_analyzed'},
                         'name': {'type': 'string'},
-                        'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'}
+                        'name_exact': {'type': 'string', 'index': 'not_analyzed'}
                     }
                 },
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
@@ -66,7 +66,7 @@ class InstanceIndex(base.IndexBase):
                     'properties': {
                         'id': {'type': 'string', 'index': 'not_analyzed'},
                         'name': {'type': 'string'},
-                        'name_not_analyzed': {'type': 'string', 'index': 'not_analyzed'}
+                        'name_exact': {'type': 'string', 'index': 'not_analyzed'}
                     }
                 },
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
@@ -75,8 +75,10 @@ class InstanceIndex(base.IndexBase):
         }
 
     def get_facets(self):
-        facets_disallowed = ('name_not_analyzed', 'image.name_not_analyzed',)
-        facets_with_options = ('status', 'availability_zone', ('flavor.name', 'flavor.name_not_analyzed'))
+        facets_disallowed = ()
+        facets_with_options = ('status', 'availability_zone',
+                               'flavor.name_not_analyzed',
+                               'image.name_not_analyzed')
 
         facets = super(InstanceIndex, self).get_facets()
 
