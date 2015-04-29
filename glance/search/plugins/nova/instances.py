@@ -38,15 +38,12 @@ class InstanceIndex(base.IndexBase):
             'properties': {
                 'id': {'type': 'string', 'index': 'not_analyzed'},
                 'instance_id': {'type': 'string', 'index': 'not_analyzed'},
-                'name': {'type': 'string'},
-                'name_exact': {'type': 'string', 'index': 'not_analyzed'},
-                # TODO - make flavor flat?
+                'name': {'type': 'string', 'index': 'not_analyzed'},
                 'flavor': {
                     'type': 'nested',
                     'properties': {
                         'id': {'type': 'string', 'index': 'not_analyzed'},
-                        'name': {'type': 'string'},
-                        'name_exact': {'type': 'string', 'index': 'not_analyzed'}
+                        'name': {'type': 'string', 'index': 'not_analyzed'},
                     }
                 },
                 'owner': {'type': 'string', 'index': 'not_analyzed'},
@@ -65,8 +62,7 @@ class InstanceIndex(base.IndexBase):
                     'type': 'nested',
                     'properties': {
                         'id': {'type': 'string', 'index': 'not_analyzed'},
-                        'name': {'type': 'string'},
-                        'name_exact': {'type': 'string', 'index': 'not_analyzed'}
+                        'name': {'type': 'string', 'index': 'not_analyzed'},
                     }
                 },
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},

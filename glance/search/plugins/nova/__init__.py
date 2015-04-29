@@ -58,7 +58,6 @@ def serialize_nova_server(server):
 
     if INDEX_FLAVORS:
         serialized['flavor']['name'] = flavor.name
-        serialized['flavor']['name_exact'] = flavor.name
         serialized['flavor']['ram'] = flavor.ram
         serialized['flavor']['ephemeral'] = flavor.ephemeral
         serialized['flavor']['vcpus'] = flavor.vcpus
@@ -66,7 +65,6 @@ def serialize_nova_server(server):
 
     if INDEX_IMAGES:
         serialized['image']['name'] = image.name
-        serialized['image']['name_exact'] = image.name
 
 
     return serialized
