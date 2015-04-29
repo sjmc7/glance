@@ -35,7 +35,6 @@ def serialize_nova_server(server):
         id=server.id,
         instance_id=server.id,
         name=server.name,
-        name_exact=server.name,
         status=server.status.lower(),
         owner=server.tenant_id,
         tenant_id=server.tenant_id,
