@@ -70,13 +70,14 @@ class InstanceIndex(base.IndexBase):
                     }
                 },
                 'availability_zone': {'type': 'string', 'index': 'not_analyzed'},
+                'host': {'type': 'string', 'index': 'not_analyzed'},
                 'status': {'type': 'string', 'index': 'not_analyzed'},
             },
         }
 
     def get_facets(self):
         facets_disallowed = ()
-        facets_with_options = ('status', 'availability_zone',
+        facets_with_options = ('status', 'availability_zone', 'host',
                                'flavor.name_not_analyzed',
                                'image.name_not_analyzed')
 
