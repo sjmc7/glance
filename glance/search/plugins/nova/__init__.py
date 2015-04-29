@@ -45,6 +45,7 @@ def serialize_nova_server(server):
         metadata=server.metadata,
         networks=server.networks,
         availability_zone=getattr(server, 'OS-EXT-AZ:availability_zone', None),
+        host=getattr(server, 'OS-EXT-SRV-ATTR:host', None),
         key_name=server.key_name,
         image={'id': server.image['id']},
         flavor={
