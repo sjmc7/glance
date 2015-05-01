@@ -55,7 +55,9 @@ class InstanceIndex(base.IndexBase):
                     'type': 'nested',
                     'properties': {
                         'name': {'type': 'string'},
-                        'ipv4': {'type': 'ip'}
+                        'OS-EXT-IPS-MAC:mac_addr': {'type': 'string', 'index': 'not_analyzed'},
+                        'OS-EXT-IPS:type': {'type': 'string', 'index': 'not_analyzed'},
+                        'addr': {'type': 'ip'}
                     }
                 },
                 'image': {
@@ -72,7 +74,7 @@ class InstanceIndex(base.IndexBase):
         }
 
     def get_facets(self):
-        facets_disallowed = ()
+        facets_disallowed = ('networks.version',)
         facets_with_options = ('status', 'availability_zone', 'host',
                                'flavor.name',
                                'image.name')

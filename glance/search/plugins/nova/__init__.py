@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import six
 
 from glance.search.plugins import indexing_clients
 
+
+LOG = logging.getLogger(__name__)
 
 INDEX_FLAVORS = True
 INDEX_IMAGES = True
@@ -28,15 +31,20 @@ def serialize_nova_server(server):
     if isinstance(server, basestring):
         server = nc_client.servers.get(server)
 
+    LOG.debug("Serializing server %s for tenant %s",
+              server.id, server.tenant_id)
+
     if INDEX_FLAVORS:
         flavor = nc_client.flavors.get(server.flavor['id'])
     if INDEX_IMAGES:
         image = indexing_clients.get_glanceclient().images.get(server.image['id'])
 
-    networks = [
-        {"name": net_name, "ipv4": ips}
-        for net_name, ips in six.iteritems(server.networks)
-    ]
+    networks = []
+    for net_name, ports in six.iteritems(server.addresses):
+        for port in ports:
+            addr = {"name": net_name}
+            addr.update(port)
+            networks.append(addr)
 
     serialized = dict(
         id=server.id,
@@ -71,6 +79,5 @@ def serialize_nova_server(server):
 
     if INDEX_IMAGES:
         serialized['image']['name'] = image.name
-
 
     return serialized
