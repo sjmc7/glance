@@ -16,12 +16,14 @@
 import abc
 
 from elasticsearch import helpers
-from keystoneclient.v2_0 import client as ksclient
+import logging
 from oslo.config import cfg
 import six
 
 import glance.search
 
+
+LOG = logging.getLogger(__name__)
 
 @six.add_metaclass(abc.ABCMeta)
 class IndexBase(object):
@@ -34,6 +36,17 @@ class IndexBase(object):
 
     def setup(self):
         """Comprehensively install search engine index and put data into it."""
+        if cfg.CONF.only_index_name is not None:
+            if cfg.CONF.only_index_name != self.index_name:
+                LOG.debug('Skipping plugin; doesn\'t match specified index "%s"',
+                          cfg.CONF.only_index_name)
+                return
+            if (cfg.CONF.only_index_type is not None and
+                    cfg.CONF.only_index_type != self.document_type):
+                LOG.debug('Skipping plugin; doesn\'t match specified doc type "%s"',
+                          cfg.CONF.only_index_type)
+                return
+
         self.setup_index()
         self.setup_mapping()
         self.setup_data()

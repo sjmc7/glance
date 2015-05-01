@@ -36,6 +36,8 @@ def main():
         cfg.Opt('os-password'),
         cfg.Opt('os-auth-url'),
         cfg.Opt('os-tenant-name'),
+        cfg.Opt('only-index-name', help='Index only this index'),
+        cfg.Opt('only-index-type', help='Index only this document type'),
         ])
     try:
         logging.register_options(CONF)
