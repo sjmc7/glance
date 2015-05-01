@@ -162,11 +162,11 @@ class IndexBase(object):
                 facet_name, actual_field = facet, facet
             if '.' in facet_name:
                 # Needs a nested aggregate
-                term_aggregations[facet_name] = {
+                term_aggregations[facet_name.replace('.', '__')] = {
                     "nested": {"path": facet_name.split('.')[0]},
                     "aggs": {
                         # TODO: Handle deeper nesting?
-                        facet_name: {
+                        facet_name.replace('.', '__'): {
                             'terms': {'field': actual_field}
                         }
                     }
@@ -192,7 +192,7 @@ class IndexBase(object):
             for term, aggregation in six.iteritems(results['aggregations']):
                 if term in aggregation:
                     # Nested - TODO handle arbitrary nesting?
-                    facet_terms[term] = aggregation[term]['buckets']
+                    facet_terms[term.replace('__', '.')] = aggregation[term]['buckets']
                 else:
                     facet_terms[term] = aggregation['buckets']
             return facet_terms
