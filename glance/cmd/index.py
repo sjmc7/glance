@@ -32,10 +32,6 @@ _LE = i18n._LE
 
 def main():
     CONF.register_cli_opts([
-        cfg.Opt('os-username'),
-        cfg.Opt('os-password'),
-        cfg.Opt('os-auth-url'),
-        cfg.Opt('os-tenant-name'),
         cfg.Opt('only-index-name', help='Index only this index'),
         cfg.Opt('only-index-type', help='Index only this document type'),
         ])
